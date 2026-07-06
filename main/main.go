@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -8,8 +9,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
-	//also add the refs to db
+	_ "github.com/lib/pq" //for sql
 )
+
+type apiConfig struct {
+	DB *database.Queries // the db package will be created by sqlc automatically
+}
 
 func main() {
 
@@ -20,7 +25,19 @@ func main() {
 		log.Fatal("PORT not found in the env")
 	}
 
-	//Connect db with the env and shi: dbURL, conn(connection)
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL not found in the env")
+	}
+
+	conn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal("Error connection to database")
+	}
+
+	apiCfg := apiConfig{
+		DB: database.New(conn),
+	} //this is used for hooking up links
 
 	router := chi.NewRouter()
 
@@ -46,7 +63,7 @@ func main() {
 	}
 
 	log.Print("The server is active")
-	err := srv.ListenAndServe() // When adding db change := to =
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
