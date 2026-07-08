@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ap4h33/glucose_predictor/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -38,6 +39,7 @@ func main() {
 	apiCfg := apiConfig{
 		DB: database.New(conn),
 	} //this is used for hooking up links
+	log.Println(apiCfg) //just so it shuts up.
 
 	router := chi.NewRouter()
 
