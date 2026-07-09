@@ -1,7 +1,8 @@
 -- +goose Up
 CREATE TABLE model_predictions (
     id UUID PRIMARY KEY,
-    patient_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    glucose NUMERIC(5,2) NOT NULL, 
     model_version VARCHAR NOT NULL,
     time_predicted TIMESTAMPTZ NOT NULL,
     generated_at TIMESTAMPTZ UNIQUE NOT NULL,
@@ -9,8 +10,6 @@ CREATE TABLE model_predictions (
     accuracy FLOAT,
     odu_accuracy FLOAT
 );
-
-
 
 -- +goose Down
 DROP TABLE model_predictions;

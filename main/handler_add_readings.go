@@ -13,14 +13,14 @@ import (
 
 func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Patient           uuid.NullUUID `json:"patient"`
-		TimeOfReading     time.Time     `json:"timestamp"`
-		Glucose           string        `json:"glucose"`
-		BasalRate         string        `json:"basal_rate"`
-		Bolus             string        `json:"bolus"`
-		Carbs             string        `json:"carbs"`
-		ExerciseDuration  int32         `json:"ex_duration"`
-		ExerciseIntensity int32         `json:"ex_intensity"`
+		Patient           uuid.UUID `json:"patient"`
+		TimeOfReading     time.Time `json:"timestamp"`
+		Glucose           string    `json:"glucose"`
+		BasalRate         string    `json:"basal_rate"`
+		Bolus             string    `json:"bolus"`
+		Carbs             string    `json:"carbs"`
+		ExerciseDuration  int32     `json:"ex_duration"`
+		ExerciseIntensity int32     `json:"ex_intensity"`
 	}
 
 	var params []parameters
@@ -33,7 +33,7 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 	}
 
 	readings := make([]database.Reading, 0, len(params))
-	//makes an epty slice, appends processed reading into said slice, then returns the whole thing once the loop is complete
+	//makes an empty slice, appends processed reading into said slice, then returns the whole thing once the loop is complete
 	for _, p := range params {
 		reading, err := apiCfg.DB.AddReading(r.Context(), database.AddReadingParams{
 			ID:            uuid.New(),

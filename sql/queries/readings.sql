@@ -7,3 +7,7 @@ RETURNING *;
 UPDATE readings
 SET in_the_model=true
 WHERE id=$1;
+
+-- name: GetReadings :many
+SELECT * FROM readings
+WHERE patient_id=$1;

@@ -54,6 +54,7 @@ func main() {
 	v1Router := chi.NewRouter()
 	v1Router.Post("/user", apiCfg.handlerCreateUser)
 	v1Router.Post("/readings", apiCfg.handlerAddReadings)
+	v1Router.Get("/glucose_levels", apiCfg.handlerSeeInfo)
 	v1Router.Post("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test works"))
 	})

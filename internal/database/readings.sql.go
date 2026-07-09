@@ -21,7 +21,7 @@ RETURNING id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, ex
 
 type AddReadingParams struct {
 	ID                uuid.UUID
-	PatientID         uuid.NullUUID
+	PatientID         uuid.UUID
 	TimeOfReading     time.Time
 	Glucose           string
 	BasalRate         string
@@ -57,6 +57,45 @@ func (q *Queries) AddReading(ctx context.Context, arg AddReadingParams) (Reading
 		&i.InTheModel,
 	)
 	return i, err
+}
+
+const getReadings = `-- name: GetReadings :many
+SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM readings
+WHERE patient_id=$1
+`
+
+func (q *Queries) GetReadings(ctx context.Context, patientID uuid.UUID) ([]Reading, error) {
+	rows, err := q.db.QueryContext(ctx, getReadings, patientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Reading
+	for rows.Next() {
+		var i Reading
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientID,
+			&i.TimeOfReading,
+			&i.Glucose,
+			&i.BasalRate,
+			&i.Bolus,
+			&i.Carbs,
+			&i.ExerciseDuration,
+			&i.ExerciseIntensity,
+			&i.InTheModel,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const sendReadingToModel = `-- name: SendReadingToModel :exec
