@@ -23,37 +23,42 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 		ExerciseIntensity int32         `json:"ex_intensity"`
 	}
 
+	var params []parameters
+
 	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, 400, fmt.Sprintf("Error parsing JSON: %s", err))
 		return
 	}
 
-	ExDuration := sql.NullInt32{
-		Int32: params.ExerciseDuration,
-		Valid: true,
-	}
-	ExIntensity := sql.NullInt32{
-		Int32: int32(params.ExerciseIntensity),
-		Valid: true,
+	readings := make([]database.Reading, 0, len(params))
+	//makes an epty slice, appends processed reading into said slice, then returns the whole thing once the loop is complete
+	for _, p := range params {
+		reading, err := apiCfg.DB.AddReading(r.Context(), database.AddReadingParams{
+			ID:            uuid.New(),
+			PatientID:     p.Patient,
+			TimeOfReading: p.TimeOfReading,
+			Glucose:       p.Glucose,
+			BasalRate:     p.BasalRate,
+			Bolus:         p.Bolus,
+			Carbs:         p.Carbs,
+			ExerciseDuration: sql.NullInt32{
+				Int32: p.ExerciseDuration,
+				Valid: true,
+			},
+			ExerciseIntensity: sql.NullInt32{
+				Int32: p.ExerciseIntensity,
+				Valid: true,
+			},
+		})
+		if err != nil {
+			respondWithError(w, 400, fmt.Sprintf("Could not create reading: %s", err))
+			return
+		}
+
+		readings = append(readings, reading)
 	}
 
-	reading, err := apiCfg.DB.AddReading(r.Context(), database.AddReadingParams{
-		ID:                uuid.New(),
-		PatientID:         params.Patient,
-		TimeOfReading:     params.TimeOfReading,
-		Glucose:           params.Glucose,
-		BasalRate:         params.BasalRate,
-		Bolus:             params.Bolus,
-		Carbs:             params.Carbs,
-		ExerciseDuration:  ExDuration,
-		ExerciseIntensity: ExIntensity,
-	})
-	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Could not create a reading: %s", err))
-	}
-	respondWithJSON(w, 200, reading)
-
+	respondWithJSON(w, 200, readings)
 }
