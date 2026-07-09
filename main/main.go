@@ -39,7 +39,6 @@ func main() {
 	apiCfg := apiConfig{
 		DB: database.New(conn),
 	} //this is used for hooking up links
-	log.Println(apiCfg) //just so it shuts up.
 
 	router := chi.NewRouter()
 
@@ -53,7 +52,8 @@ func main() {
 	}))
 
 	v1Router := chi.NewRouter()
-	//here goes the links
+	v1Router.Post("/user", apiCfg.handlerCreateUser)
+	v1Router.Post("/readings", apiCfg.handlerAddReadings)
 	v1Router.Post("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test works"))
 	})
