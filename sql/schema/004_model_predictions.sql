@@ -1,11 +1,11 @@
 -- +goose Up
 CREATE TABLE model_predictions (
     id UUID PRIMARY KEY,
-    patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    patient_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     glucose NUMERIC(5,2) NOT NULL, 
     model_version VARCHAR NOT NULL,
     time_predicted TIMESTAMPTZ NOT NULL,
-    generated_at TIMESTAMPTZ UNIQUE NOT NULL,
+    generated_at TIMESTAMPTZ NOT NULL,
     predicted_value NUMERIC(5,2) NOT NULL,
     accuracy FLOAT,
     odu_accuracy FLOAT

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ap4h33/glucose_predictor/internal/database"
-	"github.com/google/uuid"
 )
 
 func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +18,7 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 	}
 
 	type parameters struct {
-		PatientID uuid.UUID `json:"patient"`
+		PatientID int32 `json:"patient"`
 	}
 
 	decoder := json.NewDecoder(r.Body)

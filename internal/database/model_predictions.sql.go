@@ -8,8 +8,6 @@ package database
 import (
 	"context"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const getModelPredictions = `-- name: GetModelPredictions :many
@@ -20,7 +18,7 @@ ORDER BY time_predicted ASC
 `
 
 type GetModelPredictionsParams struct {
-	PatientID     uuid.UUID
+	PatientID     int32
 	TimePredicted time.Time
 }
 

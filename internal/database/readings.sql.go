@@ -21,7 +21,7 @@ RETURNING id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, ex
 
 type AddReadingParams struct {
 	ID                uuid.UUID
-	PatientID         uuid.UUID
+	PatientID         int32
 	TimeOfReading     time.Time
 	Glucose           string
 	BasalRate         string
@@ -64,7 +64,7 @@ SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exerc
 WHERE patient_id=$1
 `
 
-func (q *Queries) GetReadings(ctx context.Context, patientID uuid.UUID) ([]Reading, error) {
+func (q *Queries) GetReadings(ctx context.Context, patientID int32) ([]Reading, error) {
 	rows, err := q.db.QueryContext(ctx, getReadings, patientID)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ WHERE patient_id=$1
 AND in_the_model=false
 `
 
-func (q *Queries) GetUnseenReadings(ctx context.Context, patientID uuid.UUID) ([]Reading, error) {
+func (q *Queries) GetUnseenReadings(ctx context.Context, patientID int32) ([]Reading, error) {
 	rows, err := q.db.QueryContext(ctx, getUnseenReadings, patientID)
 	if err != nil {
 		return nil, err

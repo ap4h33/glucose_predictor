@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"github.com/ap4h33/glucose_predictor/internal/database"
-	"github.com/google/uuid"
 )
 
 func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
+		ID   int    `json:"id"`
 		Name string `json:"name"`
 	}
 
@@ -23,8 +23,8 @@ func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Reques
 	}
 
 	reading, err := apiCfg.DB.CreateUser(r.Context(), database.CreateUserParams{
-		ID:   uuid.New(),
-		Name: params.Name,
+		Column1: int32(params.ID),
+		Name:    params.Name,
 	})
 	if err != nil {
 		respondWithError(w, 400, fmt.Sprintf("Could not create user: %s", err))

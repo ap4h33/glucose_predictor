@@ -1,8 +1,8 @@
 -- +goose Up
 CREATE TABLE readings (
     id UUID PRIMARY KEY,
-    patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    time_of_reading TIMESTAMPTZ UNIQUE NOT NULL,
+    patient_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    time_of_reading TIMESTAMPTZ NOT NULL,
     glucose NUMERIC(5,2) NOT NULL,
     basal_rate NUMERIC(5,2) NOT NULL,
     bolus NUMERIC(5,2) NOT NULL,

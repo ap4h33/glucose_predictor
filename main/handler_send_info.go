@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
 )
 
-func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID uuid.UUID) error {
+func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error {
 	//change this value to control how many readings are needed before sending
 	const requiredReadings = 5
 
@@ -28,7 +26,7 @@ func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID uuid.UUID) e
 	}
 
 	type modelReading struct {
-		Patient           uuid.UUID `json:"patient"`
+		Patient           int32     `json:"patient"`
 		TimeOfReading     time.Time `json:"timestamp"`
 		Glucose           string    `json:"glucose"`
 		BasalRate         string    `json:"basal_rate"`

@@ -13,14 +13,14 @@ import (
 
 func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Patient           uuid.UUID `json:"patient"`
-		TimeOfReading     time.Time `json:"timestamp"`
-		Glucose           string    `json:"glucose"`
-		BasalRate         string    `json:"basal_rate"`
-		Bolus             string    `json:"bolus"`
-		Carbs             string    `json:"carbs"`
-		ExerciseDuration  int32     `json:"ex_duration"`
-		ExerciseIntensity int32     `json:"ex_intensity"`
+		Patient           int32       `json:"patient_id"`
+		TimeOfReading     time.Time   `json:"timestamp"`
+		Glucose           json.Number `json:"glucose"`
+		BasalRate         json.Number `json:"basal_rate"`
+		Bolus             json.Number `json:"bolus"`
+		Carbs             json.Number `json:"carbs"`
+		ExerciseDuration  int32       `json:"exercise_duration"`
+		ExerciseIntensity int32       `json:"exercise_intensity"`
 	}
 
 	var params []parameters
@@ -39,10 +39,10 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 			ID:            uuid.New(),
 			PatientID:     p.Patient,
 			TimeOfReading: p.TimeOfReading,
-			Glucose:       p.Glucose,
-			BasalRate:     p.BasalRate,
-			Bolus:         p.Bolus,
-			Carbs:         p.Carbs,
+			Glucose:       p.Glucose.String(),
+			BasalRate:     p.BasalRate.String(),
+			Bolus:         p.Bolus.String(),
+			Carbs:         p.Carbs.String(),
 			ExerciseDuration: sql.NullInt32{
 				Int32: p.ExerciseDuration,
 				Valid: true,

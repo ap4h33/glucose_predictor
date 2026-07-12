@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE odu_predictions (
     id UUID PRIMARY KEY,
-    patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    patient_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     glucose NUMERIC(5,2) NOT NULL,
     time_predicted TIMESTAMPTZ NOT NULL,
     generated_at TIMESTAMPTZ NOT NULL,

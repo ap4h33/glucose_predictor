@@ -13,7 +13,7 @@ import (
 
 type ModelPrediction struct {
 	ID             uuid.UUID
-	PatientID      uuid.UUID
+	PatientID      int32
 	Glucose        string
 	ModelVersion   string
 	TimePredicted  time.Time
@@ -25,7 +25,7 @@ type ModelPrediction struct {
 
 type OduPrediction struct {
 	ID             uuid.UUID
-	PatientID      uuid.UUID
+	PatientID      int32
 	Glucose        string
 	TimePredicted  time.Time
 	GeneratedAt    time.Time
@@ -35,7 +35,7 @@ type OduPrediction struct {
 
 type Reading struct {
 	ID                uuid.UUID
-	PatientID         uuid.UUID
+	PatientID         int32
 	TimeOfReading     time.Time
 	Glucose           string
 	BasalRate         string
@@ -47,6 +47,6 @@ type Reading struct {
 }
 
 type User struct {
-	ID   uuid.UUID
+	ID   int32
 	Name string
 }

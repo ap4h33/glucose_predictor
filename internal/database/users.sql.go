@@ -7,23 +7,23 @@ package database
 
 import (
 	"context"
-
-	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, name)
-VALUES ($1, $2)
+SELECT 
+    CASE WHEN $1::INT = 0 THEN nextval(pg_get_serial_sequence('users', 'id')) ELSE $1::INT END, 
+    $2
 RETURNING id, name
 `
 
 type CreateUserParams struct {
-	ID   uuid.UUID
-	Name string
+	Column1 int32
+	Name    string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.Name)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Column1, arg.Name)
 	var i User
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
