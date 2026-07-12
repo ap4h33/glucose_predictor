@@ -14,7 +14,8 @@ import (
 )
 
 type apiConfig struct {
-	DB *database.Queries // the db package will be created by sqlc automatically
+	DB       *database.Queries // the db package will be created by sqlc automatically
+	ModelURL string            // connection with the model
 }
 
 func main() {
@@ -31,13 +32,19 @@ func main() {
 		log.Fatal("DB_URL not found in the env")
 	}
 
+	modelURL := os.Getenv("MODEL_URL")
+	if modelURL == "" {
+		log.Fatal("MODEL_URL not found in the env")
+	}
+
 	conn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Error connection to database")
 	}
 
 	apiCfg := apiConfig{
-		DB: database.New(conn),
+		DB:       database.New(conn),
+		ModelURL: modelURL,
 	} //this is used for hooking up links
 
 	router := chi.NewRouter()
@@ -58,7 +65,7 @@ func main() {
 	v1Router.Post("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test works"))
 	})
-	router.Mount("/v1", v1Router)
+	router.Mount("/glucose_predictor/v1", v1Router)
 
 	srv := &http.Server{
 		Handler: router,

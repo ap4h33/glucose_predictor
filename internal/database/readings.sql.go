@@ -98,6 +98,46 @@ func (q *Queries) GetReadings(ctx context.Context, patientID uuid.UUID) ([]Readi
 	return items, nil
 }
 
+const getUnseenReadings = `-- name: GetUnseenReadings :many
+SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM readings
+WHERE patient_id=$1
+AND in_the_model=false
+`
+
+func (q *Queries) GetUnseenReadings(ctx context.Context, patientID uuid.UUID) ([]Reading, error) {
+	rows, err := q.db.QueryContext(ctx, getUnseenReadings, patientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Reading
+	for rows.Next() {
+		var i Reading
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientID,
+			&i.TimeOfReading,
+			&i.Glucose,
+			&i.BasalRate,
+			&i.Bolus,
+			&i.Carbs,
+			&i.ExerciseDuration,
+			&i.ExerciseIntensity,
+			&i.InTheModel,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const sendReadingToModel = `-- name: SendReadingToModel :exec
 UPDATE readings
 SET in_the_model=true

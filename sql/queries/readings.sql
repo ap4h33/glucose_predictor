@@ -11,3 +11,8 @@ WHERE id=$1;
 -- name: GetReadings :many
 SELECT * FROM readings
 WHERE patient_id=$1;
+
+-- name: GetUnseenReadings :many
+SELECT * FROM readings
+WHERE patient_id=$1
+AND in_the_model=false;
