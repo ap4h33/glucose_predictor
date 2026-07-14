@@ -16,3 +16,10 @@ WHERE patient_id=$1;
 SELECT * FROM readings
 WHERE patient_id=$1
 AND in_the_model=false;
+
+-- name: GetLastReadings :many
+SELECT * FROM READINGS 
+WHERE patient_id=$1
+AND in_the_model=false
+ORDER BY time_of_reading DESC
+LIMIT 12;

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -33,6 +34,7 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 	}
 
 	readings := make([]database.Reading, 0, len(params))
+	patients := make(map[int32]struct{})
 	//makes an empty slice, appends processed reading into said slice, then returns the whole thing once the loop is complete
 	for _, p := range params {
 		reading, err := apiCfg.DB.AddReading(r.Context(), database.AddReadingParams{
@@ -58,6 +60,15 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 		}
 
 		readings = append(readings, reading)
+		patients[reading.PatientID] = struct{}{}
+	}
+
+	for patientID := range patients {
+		go func(id int32) {
+			if err := apiCfg.handlerSendUnseenReadingsToModel(id); err != nil {
+				log.Printf("error sending readings for patient %d: %v", id, err)
+			}
+		}(patientID)
 	}
 
 	respondWithJSON(w, 200, readings)

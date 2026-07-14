@@ -6,54 +6,62 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
+	"strconv"
 )
 
 func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error {
-	//change this value to control how many readings are needed before sending
-	const requiredReadings = 5
-
-	readings, err := apiCfg.DB.GetUnseenReadings(
+	const readings_amount = 12
+	readings, err := apiCfg.DB.GetLastReadings(
 		context.Background(),
 		patientID,
 	)
 	if err != nil {
-		return fmt.Errorf("could not get unseen readings: %s", err)
+		return fmt.Errorf("could not get unseen readings: %w", err)
 	}
 
-	if len(readings) < requiredReadings {
+	// Not enough data for the model
+	if len(readings) < readings_amount {
 		return nil
 	}
 
-	type modelReading struct {
-		Patient           int32     `json:"patient"`
-		TimeOfReading     time.Time `json:"timestamp"`
-		Glucose           string    `json:"glucose"`
-		BasalRate         string    `json:"basal_rate"`
-		Bolus             string    `json:"bolus"`
-		Carbs             string    `json:"carbs"`
-		ExerciseDuration  int32     `json:"ex_duration"`
-		ExerciseIntensity int32     `json:"ex_intensity"`
-	}
-
-	modelReadings := make([]modelReading, 0, len(readings))
+	// Shape: (1, readings_amount, 6)
+	modelInput := make([][][]float32, 1)
+	modelInput[0] = make([][]float32, 0, len(readings))
 
 	for _, reading := range readings {
-		modelReadings = append(modelReadings, modelReading{
-			Patient:           reading.PatientID,
-			TimeOfReading:     reading.TimeOfReading,
-			Glucose:           reading.Glucose,
-			BasalRate:         reading.BasalRate,
-			Bolus:             reading.Bolus,
-			Carbs:             reading.Carbs,
-			ExerciseDuration:  reading.ExerciseDuration.Int32,
-			ExerciseIntensity: reading.ExerciseIntensity.Int32,
+		glucose, err := strconv.ParseFloat(reading.Glucose, 32)
+		if err != nil {
+			return fmt.Errorf("invalid glucose value: %w", err)
+		}
+
+		basalRate, err := strconv.ParseFloat(reading.BasalRate, 32)
+		if err != nil {
+			return fmt.Errorf("invalid basal_rate value: %w", err)
+		}
+
+		bolus, err := strconv.ParseFloat(reading.Bolus, 32)
+		if err != nil {
+			return fmt.Errorf("invalid bolus value: %w", err)
+		}
+
+		carbs, err := strconv.ParseFloat(reading.Carbs, 32)
+		if err != nil {
+			return fmt.Errorf("invalid carbs value: %w", err)
+		}
+
+		modelInput[0] = append(modelInput[0], []float32{
+			float32(glucose),
+			float32(basalRate),
+			float32(bolus),
+			float32(carbs),
+			float32(reading.ExerciseDuration.Int32),
+			float32(reading.ExerciseIntensity.Int32),
 		})
 	}
 
-	body, err := json.Marshal(modelReadings)
+	body, err := json.Marshal(modelInput)
 	if err != nil {
-		return fmt.Errorf("could not encode readings: %s", err)
+		return fmt.Errorf("could not encode readings: %w", err)
 	}
 
 	response, err := http.Post(
@@ -62,7 +70,7 @@ func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error
 		bytes.NewBuffer(body),
 	)
 	if err != nil {
-		return fmt.Errorf("could not send readings to model: %s", err)
+		return fmt.Errorf("could not send readings to model: %w", err)
 	}
 	defer response.Body.Close()
 
@@ -70,13 +78,14 @@ func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error
 		return fmt.Errorf("model returned status code: %d", response.StatusCode)
 	}
 
+	// Marks the readings that were sent
 	for _, reading := range readings {
 		err := apiCfg.DB.SendReadingToModel(
 			context.Background(),
 			reading.ID,
 		)
 		if err != nil {
-			return fmt.Errorf("could not update reading %s: %s", reading.ID, err)
+			return fmt.Errorf("could not update reading %s: %w", reading.ID, err)
 		}
 	}
 

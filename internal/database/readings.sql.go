@@ -59,6 +59,48 @@ func (q *Queries) AddReading(ctx context.Context, arg AddReadingParams) (Reading
 	return i, err
 }
 
+const getLastReadings = `-- name: GetLastReadings :many
+SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM READINGS 
+WHERE patient_id=$1
+AND in_the_model=false
+ORDER BY time_of_reading DESC
+LIMIT 12
+`
+
+func (q *Queries) GetLastReadings(ctx context.Context, patientID int32) ([]Reading, error) {
+	rows, err := q.db.QueryContext(ctx, getLastReadings, patientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Reading
+	for rows.Next() {
+		var i Reading
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientID,
+			&i.TimeOfReading,
+			&i.Glucose,
+			&i.BasalRate,
+			&i.Bolus,
+			&i.Carbs,
+			&i.ExerciseDuration,
+			&i.ExerciseIntensity,
+			&i.InTheModel,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getReadings = `-- name: GetReadings :many
 SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM readings
 WHERE patient_id=$1
