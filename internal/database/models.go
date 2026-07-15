@@ -11,26 +11,29 @@ import (
 	"github.com/google/uuid"
 )
 
-type ModelPrediction struct {
-	ID             uuid.UUID
-	PatientID      int32
-	Glucose        string
-	ModelVersion   string
-	TimePredicted  time.Time
-	GeneratedAt    time.Time
-	PredictedValue string
-	Accuracy       sql.NullFloat64
-	OduAccuracy    sql.NullFloat64
+type Admin struct {
+	ID         uuid.UUID
+	HospitalID uuid.NullUUID
 }
 
-type OduPrediction struct {
-	ID             uuid.UUID
-	PatientID      int32
-	Glucose        string
-	TimePredicted  time.Time
-	GeneratedAt    time.Time
-	PredictedValue string
-	Accuracy       sql.NullFloat64
+type Hospital struct {
+	ID   uuid.UUID
+	Name string
+}
+
+type Model struct {
+	ID      uuid.UUID
+	Name    string
+	Version string
+}
+
+type Prediction struct {
+	ID               uuid.UUID
+	ModelID          uuid.NullUUID
+	PatientID        int32
+	GlucosePredicted string
+	TimePredicted    time.Time
+	GeneratedAt      time.Time
 }
 
 type Reading struct {
@@ -47,6 +50,7 @@ type Reading struct {
 }
 
 type User struct {
-	ID   int32
-	Name string
+	ID         int32
+	HospitalID uuid.NullUUID
+	Name       string
 }
