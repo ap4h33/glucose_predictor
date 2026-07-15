@@ -12,6 +12,49 @@ import (
 	"github.com/google/uuid"
 )
 
+const addPrediction = `-- name: AddPrediction :one
+INSERT INTO predictions (
+    id,
+    model_id, 
+    patient_id,
+    glucose_predicted,
+    time_predicted,
+    generated_at
+)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, model_id, patient_id, glucose_predicted, time_predicted, generated_at
+`
+
+type AddPredictionParams struct {
+	ID               uuid.UUID
+	ModelID          uuid.UUID
+	PatientID        int32
+	GlucosePredicted string
+	TimePredicted    time.Time
+	GeneratedAt      time.Time
+}
+
+func (q *Queries) AddPrediction(ctx context.Context, arg AddPredictionParams) (Prediction, error) {
+	row := q.db.QueryRowContext(ctx, addPrediction,
+		arg.ID,
+		arg.ModelID,
+		arg.PatientID,
+		arg.GlucosePredicted,
+		arg.TimePredicted,
+		arg.GeneratedAt,
+	)
+	var i Prediction
+	err := row.Scan(
+		&i.ID,
+		&i.ModelID,
+		&i.PatientID,
+		&i.GlucosePredicted,
+		&i.TimePredicted,
+		&i.GeneratedAt,
+	)
+	return i, err
+}
+
 const getModelPredictions = `-- name: GetModelPredictions :many
 SELECT glucose_predicted, time_predicted FROM predictions
 WHERE model_id=$1
@@ -21,7 +64,7 @@ ORDER BY time_predicted ASC
 `
 
 type GetModelPredictionsParams struct {
-	ModelID       uuid.NullUUID
+	ModelID       uuid.UUID
 	PatientID     int32
 	TimePredicted time.Time
 }

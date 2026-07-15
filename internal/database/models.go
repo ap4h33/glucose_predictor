@@ -29,7 +29,7 @@ type Model struct {
 
 type Prediction struct {
 	ID               uuid.UUID
-	ModelID          uuid.NullUUID
+	ModelID          uuid.UUID
 	PatientID        int32
 	GlucosePredicted string
 	TimePredicted    time.Time
