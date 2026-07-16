@@ -59,10 +59,22 @@ func main() {
 	}))
 
 	v1Router := chi.NewRouter()
+
+	v1Router.Post("/hospitals", apiCfg.handlerCreateHospital)
+	v1Router.Get("/hospitals", apiCfg.handlerGetHospitals)
+	v1Router.Get("/hospitals/{id}", apiCfg.handlerGetHospitals)
+
+	v1Router.Post("/admin", apiCfg.handlerCreateAdmin)
+	v1Router.Get("/admin", apiCfg.handlerGetAdmin)
+	v1Router.Get("/admin/user", apiCfg.handlerGetUsers)
+
 	v1Router.Post("/user", apiCfg.handlerCreateUser)
+	v1Router.Get("/user", apiCfg.handlerGetUser)
+
 	v1Router.Post("/readings", apiCfg.handlerAddReadings)
 	v1Router.Get("/glucose_levels", apiCfg.handlerSeeInfo)
 	v1Router.Post("/predictions", apiCfg.handlerAddPredictions)
+
 	v1Router.Post("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test works"))
 	})
