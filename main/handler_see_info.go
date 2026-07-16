@@ -14,7 +14,7 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 	type response struct {
 		Readings         []database.Reading                `json:"readings"`
 		ModelPredictions []database.GetModelPredictionsRow `json:"model_predictions"`
-		OduPredictions   []database.GetOduPredictionsRow   `json:"odu_predictions"`
+		OduPredictions   []database.GetModelPredictionsRow `json:"odu_predictions"`
 	}
 
 	type parameters struct {
@@ -53,9 +53,9 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	oduPredictions, err := apiCfg.DB.GetOduPredictions(
+	oduPredictions, err := apiCfg.DB.GetModelPredictions(
 		r.Context(),
-		database.GetOduPredictionsParams{
+		database.GetModelPredictionsParams{
 			PatientID:     params.PatientID,
 			TimePredicted: now,
 		},

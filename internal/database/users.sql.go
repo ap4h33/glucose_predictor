@@ -7,24 +7,73 @@ package database
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, name)
+INSERT INTO users (id, hospital_id, name)
 SELECT 
     CASE WHEN $1::INT = 0 THEN nextval(pg_get_serial_sequence('users', 'id')) ELSE $1::INT END, 
-    $2
+    $2, $3
 RETURNING id, hospital_id, name
 `
 
 type CreateUserParams struct {
-	Column1 int32
-	Name    string
+	Column1    int32
+	HospitalID uuid.NullUUID
+	Name       string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Column1, arg.Name)
+	row := q.db.QueryRowContext(ctx, createUser, arg.Column1, arg.HospitalID, arg.Name)
 	var i User
 	err := row.Scan(&i.ID, &i.HospitalID, &i.Name)
 	return i, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, hospital_id, name
+FROM users
+WHERE id=$1
+`
+
+func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, id)
+	var i User
+	err := row.Scan(&i.ID, &i.HospitalID, &i.Name)
+	return i, err
+}
+
+const getUsers = `-- name: GetUsers :many
+SELECT id, hospital_id, name
+FROM users
+WHERE users.hospital_id=(
+    SELECT admins.hospital_id
+    FROM admins
+    WHERE admins.id=$1
+)
+`
+
+func (q *Queries) GetUsers(ctx context.Context, id uuid.UUID) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsers, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(&i.ID, &i.HospitalID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
