@@ -62,18 +62,20 @@ func main() {
 
 	v1Router.Post("/hospitals", apiCfg.handlerCreateHospital)
 	v1Router.Get("/hospitals", apiCfg.handlerGetHospitals)
-	v1Router.Get("/hospitals/{id}", apiCfg.handlerGetHospitals)
+	v1Router.Get("/hospitals/{hospital_id}", apiCfg.handlerGetHospitals)
 
 	v1Router.Post("/admin", apiCfg.handlerCreateAdmin)
-	v1Router.Get("/admin", apiCfg.handlerGetAdmin)
-	v1Router.Get("/admin/user", apiCfg.handlerGetUsers)
+	v1Router.Get("/admin/{admin_id}", apiCfg.handlerGetAdmin)
+
+	v1Router.Get("/admin/user/{admin_id}", apiCfg.handlerGetUsers)
 
 	v1Router.Post("/user", apiCfg.handlerCreateUser)
-	v1Router.Get("/user", apiCfg.handlerGetUser)
+	v1Router.Get("/user/{patient_id}", apiCfg.handlerGetUser)
 
 	v1Router.Post("/readings", apiCfg.handlerAddReadings)
-	v1Router.Get("/glucose_levels", apiCfg.handlerSeeInfo)
+	v1Router.Get("/glucose_levels/{patient_id}", apiCfg.handlerSeeInfo)
 	v1Router.Post("/predictions", apiCfg.handlerAddPredictions)
+	//GET latest predictions are in the glucose_levels, along with patient history
 
 	v1Router.Post("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test works"))

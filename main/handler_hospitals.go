@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ap4h33/glucose_predictor/internal/database"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -35,12 +36,12 @@ func (apiCfg apiConfig) handlerCreateHospital(w http.ResponseWriter, r *http.Req
 
 func (apiCfg apiConfig) handlerGetHospitals(w http.ResponseWriter, r *http.Request) {
 
-	search := r.URL.Query().Get("search")
+	id := chi.URLParam(r, "hospital_id")
 
-	if search != "" {
+	if id != "" {
 		hospital, err := apiCfg.DB.GetHospital(
 			r.Context(),
-			search,
+			id,
 		)
 		if err != nil {
 			respondWithError(w, 400, fmt.Sprintf("Could not get hospital: %s", err))

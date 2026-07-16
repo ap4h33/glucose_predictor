@@ -6,7 +6,7 @@ RETURNING *;
 -- name: GetHospital :one
 SELECT * 
 FROM hospitals
-WHERE name=$1;
+WHERE id=$1;
 
 -- name: GetAllHospitals :many
 SELECT *

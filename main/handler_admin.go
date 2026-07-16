@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ap4h33/glucose_predictor/internal/database"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -34,21 +35,16 @@ func (apiCfg *apiConfig) handlerCreateAdmin(w http.ResponseWriter, r *http.Reque
 }
 
 func (apiCfg apiConfig) handlerGetAdmin(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		AdminId uuid.UUID `json:"admin_id"`
-	}
 
-	decoder := json.NewDecoder(r.Body)
-	params := parameters{}
-	err := decoder.Decode(&params)
+	adminID, err := uuid.Parse(chi.URLParam(r, "admin_id"))
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Could not decode JSON: %s", err))
+		respondWithError(w, 400, fmt.Sprintf("Invalid admin ID: %s", err))
 		return
 	}
 
 	admin, err := apiCfg.DB.GetAdmin(
 		r.Context(),
-		params.AdminId,
+		adminID,
 	)
 	if err != nil {
 		respondWithError(w, 400, fmt.Sprintf("Could not get admin: %s", err))
