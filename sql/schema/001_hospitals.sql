@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE hospitals(
     id UUID PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL
+    name TEXT NOT NULL
 );
 
 -- +goose Down

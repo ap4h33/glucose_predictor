@@ -80,7 +80,7 @@ func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error
 
 	// Marks the readings that were sent
 	for _, reading := range readings {
-		err := apiCfg.DB.SendReadingToModel(
+		err := apiCfg.DB.UpdateReadingModelStatus(
 			context.Background(),
 			reading.ID,
 		)

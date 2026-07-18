@@ -3,19 +3,27 @@ INSERT INTO readings(id, patient_id, time_of_reading, glucose, basal_rate, bolus
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
--- name: SendReadingToModel :exec
+-- name: UpdateReadingModelStatus :exec
 UPDATE readings
 SET in_the_model=true
 WHERE id=$1;
 
 -- name: GetReadings :many
 SELECT * FROM readings
-WHERE patient_id=$1;
+WHERE patient_id=$1
+AND time_of_reading>$2
+ORDER BY time_of_reading DESC;
+
+-- name: GetAllReadings :many
+SELECT * FROM readings
+WHERE patient_id=$1
+ORDER BY time_of_reading DESC;
 
 -- name: GetUnseenReadings :many
 SELECT * FROM readings
 WHERE patient_id=$1
-AND in_the_model=false;
+AND in_the_model=false
+ORDER BY time_of_reading DESC;
 
 -- name: GetLastReadings :many
 SELECT * FROM READINGS 

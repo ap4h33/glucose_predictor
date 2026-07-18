@@ -59,6 +59,46 @@ func (q *Queries) AddReading(ctx context.Context, arg AddReadingParams) (Reading
 	return i, err
 }
 
+const getAllReadings = `-- name: GetAllReadings :many
+SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM readings
+WHERE patient_id=$1
+ORDER BY time_of_reading DESC
+`
+
+func (q *Queries) GetAllReadings(ctx context.Context, patientID int32) ([]Reading, error) {
+	rows, err := q.db.QueryContext(ctx, getAllReadings, patientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Reading
+	for rows.Next() {
+		var i Reading
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientID,
+			&i.TimeOfReading,
+			&i.Glucose,
+			&i.BasalRate,
+			&i.Bolus,
+			&i.Carbs,
+			&i.ExerciseDuration,
+			&i.ExerciseIntensity,
+			&i.InTheModel,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLastReadings = `-- name: GetLastReadings :many
 SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM READINGS 
 WHERE patient_id=$1
@@ -104,10 +144,17 @@ func (q *Queries) GetLastReadings(ctx context.Context, patientID int32) ([]Readi
 const getReadings = `-- name: GetReadings :many
 SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM readings
 WHERE patient_id=$1
+AND time_of_reading>$2
+ORDER BY time_of_reading DESC
 `
 
-func (q *Queries) GetReadings(ctx context.Context, patientID int32) ([]Reading, error) {
-	rows, err := q.db.QueryContext(ctx, getReadings, patientID)
+type GetReadingsParams struct {
+	PatientID     int32
+	TimeOfReading time.Time
+}
+
+func (q *Queries) GetReadings(ctx context.Context, arg GetReadingsParams) ([]Reading, error) {
+	rows, err := q.db.QueryContext(ctx, getReadings, arg.PatientID, arg.TimeOfReading)
 	if err != nil {
 		return nil, err
 	}
@@ -144,6 +191,7 @@ const getUnseenReadings = `-- name: GetUnseenReadings :many
 SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM readings
 WHERE patient_id=$1
 AND in_the_model=false
+ORDER BY time_of_reading DESC
 `
 
 func (q *Queries) GetUnseenReadings(ctx context.Context, patientID int32) ([]Reading, error) {
@@ -180,13 +228,13 @@ func (q *Queries) GetUnseenReadings(ctx context.Context, patientID int32) ([]Rea
 	return items, nil
 }
 
-const sendReadingToModel = `-- name: SendReadingToModel :exec
+const updateReadingModelStatus = `-- name: UpdateReadingModelStatus :exec
 UPDATE readings
 SET in_the_model=true
 WHERE id=$1
 `
 
-func (q *Queries) SendReadingToModel(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, sendReadingToModel, id)
+func (q *Queries) UpdateReadingModelStatus(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, updateReadingModelStatus, id)
 	return err
 }

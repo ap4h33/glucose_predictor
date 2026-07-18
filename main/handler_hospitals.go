@@ -36,9 +36,14 @@ func (apiCfg apiConfig) handlerCreateHospital(w http.ResponseWriter, r *http.Req
 
 func (apiCfg apiConfig) handlerGetHospitals(w http.ResponseWriter, r *http.Request) {
 
-	id := chi.URLParam(r, "hospital_id")
+	idStr := chi.URLParam(r, "hospital_id")
 
-	if id != "" {
+	if idStr != "" {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			respondWithError(w, 400, "Invalid hospital ID")
+			return
+		}
 		hospital, err := apiCfg.DB.GetHospital(
 			r.Context(),
 			id,

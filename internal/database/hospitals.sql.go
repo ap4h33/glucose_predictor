@@ -60,11 +60,11 @@ func (q *Queries) GetAllHospitals(ctx context.Context) ([]Hospital, error) {
 const getHospital = `-- name: GetHospital :one
 SELECT id, name 
 FROM hospitals
-WHERE name=$1
+WHERE id=$1
 `
 
-func (q *Queries) GetHospital(ctx context.Context, name string) (Hospital, error) {
-	row := q.db.QueryRowContext(ctx, getHospital, name)
+func (q *Queries) GetHospital(ctx context.Context, id uuid.UUID) (Hospital, error) {
+	row := q.db.QueryRowContext(ctx, getHospital, id)
 	var i Hospital
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
