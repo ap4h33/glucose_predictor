@@ -3,10 +3,10 @@ INSERT INTO hospitals(id, name)
 VALUES ($1, $2)
 RETURNING *;
 
--- name: GetHospital :one
+-- name: GetHospitalsByName :many
 SELECT * 
 FROM hospitals
-WHERE id=$1;
+WHERE name=$1;
 
 -- name: GetAllHospitals :many
 SELECT *

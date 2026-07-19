@@ -36,34 +36,26 @@ func (apiCfg apiConfig) handlerCreateHospital(w http.ResponseWriter, r *http.Req
 
 func (apiCfg apiConfig) handlerGetHospitals(w http.ResponseWriter, r *http.Request) {
 
-	idStr := chi.URLParam(r, "hospital_id")
+	name := chi.URLParam(r, "name")
 
-	if idStr != "" {
-		id, err := uuid.Parse(idStr)
+	// Return all hospitals when no name is provided
+	if name == "" {
+		hospitals, err := apiCfg.DB.GetAllHospitals(r.Context())
 		if err != nil {
-			respondWithError(w, 400, "Invalid hospital ID")
+			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not get hospitals: %s", err))
 			return
 		}
-		hospital, err := apiCfg.DB.GetHospital(
-			r.Context(),
-			id,
-		)
-		if err != nil {
-			respondWithError(w, 400, fmt.Sprintf("Could not get hospital: %s", err))
-			return
-		}
-		respondWithJSON(w, 200, hospital)
+
+		respondWithJSON(w, 200, hospitals)
 		return
 	}
 
-	hospitals, err := apiCfg.DB.GetAllHospitals(
-		r.Context(),
-	)
-
+	hospital, err := apiCfg.DB.GetHospitalsByName(r.Context(), name)
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Could not get hospitals: %s", err))
+		respondWithError(w, http.StatusNotFound, fmt.Sprintf("Could not find hospital: %s", err))
 		return
 	}
 
-	respondWithJSON(w, 200, hospitals)
+	respondWithJSON(w, 200, hospital)
+
 }

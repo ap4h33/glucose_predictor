@@ -50,7 +50,7 @@ func main() {
 	router := chi.NewRouter()
 
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://"},
+		AllowedOrigins:   []string{"https://*", "http://", "http://localhost:3000*"},
 		AllowedMethods:   []string{"GET", "POST", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"Link"},
@@ -62,7 +62,7 @@ func main() {
 
 	v1Router.Post("/hospitals", apiCfg.handlerCreateHospital)
 	v1Router.Get("/hospitals", apiCfg.handlerGetHospitals)
-	v1Router.Get("/hospitals/{hospital_id}", apiCfg.handlerGetHospitals)
+	v1Router.Get("/hospitals/{name}", apiCfg.handlerGetHospitals)
 
 	v1Router.Post("/admin", apiCfg.handlerCreateAdmin)
 	v1Router.Get("/admin/{admin_id}", apiCfg.handlerGetAdmin)
