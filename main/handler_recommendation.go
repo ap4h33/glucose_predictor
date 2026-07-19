@@ -31,18 +31,67 @@ func (apiCfg apiConfig) handlerGetRecommendations(w http.ResponseWriter, r *http
 }
 
 func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter, r *http.Request, patientID int32) {
-	type response struct {
-		Readings         []database.Reading                `json:"readings"`
-		ModelPredictions []database.GetModelPredictionsRow `json:"model_predictions"`
-		OduPredictions   []database.GetModelPredictionsRow `json:"odu_predictions"`
+	// Time is used to get predictions > now, and readings from 1h ago till now.
+	now := time.Now()
+	duration, err := time.ParseDuration("1h")
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not parse time: %s", err))
+	}
+	readingsTime := now.Add(-duration)
+
+	// Readings
+	type ReadingsResponse struct {
+		Glucose           string `json:"glucose"`
+		BasalRate         string `json:"basal_rate"`
+		Bolus             string `json:"bolus"`
+		Carbs             string `json:"carbs"`
+		ExerciseDuration  int32  `json:"exercise_duration"`
+		ExerciseIntensity int32  `json:"exercise_intensity"`
 	}
 
+	readings, err := apiCfg.DB.GetReadings(
+		r.Context(),
+		database.GetReadingsParams{
+			PatientID:     patientID,
+			TimeOfReading: readingsTime,
+		},
+	)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not get readings: %s", err))
+	}
+
+	if len(readings) > 0 {
+		w.Header().Set(
+			"parient_id",
+			strconv.FormatInt(int64(patientID), 10),
+		)
+		w.Header().Set(
+			"last_reading_time",
+			readings[0].TimeOfReading.Format(time.RFC3339),
+		)
+	}
+
+	for i, j := 0, len(readings)-1; i < j; i, j = i+1, j-1 {
+		readings[i], readings[j] = readings[j], readings[i]
+	}
+
+	var readingsResponse []ReadingsResponse
+	for _, read := range readings {
+		readingsResponse = append(readingsResponse, ReadingsResponse{
+			Glucose:           read.Glucose,
+			BasalRate:         read.BasalRate,
+			Bolus:             read.Bolus,
+			Carbs:             read.Carbs,
+			ExerciseDuration:  read.ExerciseDuration.Int32,
+			ExerciseIntensity: read.ExerciseIntensity.Int32,
+		})
+	}
+
+	// Predictions
 	type PredictionResponse struct {
 		ModelPrediction database.GetModelPredictionsRow
 		ModelName       string `json:"model_name"`
 	}
-
-	now := time.Now()
 
 	aiPredictions, err := apiCfg.DB.GetModelPredictions(
 		r.Context(),
@@ -72,10 +121,10 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 		return
 	}
 
-	var predictions []PredictionResponse
+	var predictionsResponse []PredictionResponse
 	// This creates an array of all of the predictions, and labals them with according names.
 	for _, p := range aiPredictions {
-		predictions = append(predictions, PredictionResponse{
+		predictionsResponse = append(predictionsResponse, PredictionResponse{
 			ModelPrediction: p,
 			ModelName:       "AI",
 		})
@@ -87,6 +136,16 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 			ModelName:       "ODU",
 		})
 	}
+
+	type response struct {
+		Readings    []ReadingsResponse   `json:"readings"`
+		Predictions []PredictionResponse `json:"predictions"`
+	}
+
+	respondWithJSON(w, 200, response{
+		Readings:    readingsResponse,
+		Predictions: predictionsResponse,
+	})
 
 }
 
