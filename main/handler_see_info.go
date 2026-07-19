@@ -69,7 +69,7 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 		r.Context(),
 		database.GetModelPredictionsParams{
 			Name:          "ai_model",
-			Version:       "1.0.0",
+			Version:       apiCfg.AIVersion,
 			PatientID:     int32(patientID),
 			TimePredicted: now,
 		},
@@ -83,7 +83,7 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 		r.Context(),
 		database.GetModelPredictionsParams{
 			Name:          "odu_model",
-			Version:       "1.0.0",
+			Version:       apiCfg.ODUVerion,
 			PatientID:     int32(patientID),
 			TimePredicted: now,
 		},

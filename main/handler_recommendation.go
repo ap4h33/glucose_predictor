@@ -48,6 +48,7 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 		r.Context(),
 		database.GetModelPredictionsParams{
 			Name:          "ai_model",
+			Version:       apiCfg.AIVersion,
 			PatientID:     patientID,
 			TimePredicted: now,
 		},
@@ -61,7 +62,8 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 		r.Context(),
 		database.GetModelPredictionsParams{
 			Name:          "odu_model",
-			PatientID:     patientID,
+			Version:       apiCfg.ODUVerion,
+			PatientID:     int32(patientID),
 			TimePredicted: now,
 		},
 	)

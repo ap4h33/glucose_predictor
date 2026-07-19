@@ -14,8 +14,10 @@ import (
 )
 
 type apiConfig struct {
-	DB       *database.Queries // the db package will be created by sqlc automatically
-	ModelURL string            // connection with the model
+	DB        *database.Queries // the db package will be created by sqlc automatically
+	ModelURL  string            // connection with the model
+	AIVersion string
+	ODUVerion string
 }
 
 func main() {
@@ -37,14 +39,26 @@ func main() {
 		log.Fatal("MODEL_URL not found in the env")
 	}
 
+	aiVersion := os.Getenv("AI_MODEL_VERSION")
+	if aiVersion == "" {
+		log.Fatal("AI_MODEL_VERSION not found in the env")
+	}
+
+	oduVersion := os.Getenv("ODU_MODEL_VERSION")
+	if oduVersion == "" {
+		log.Fatal("ODU_MODEL_VERSION not found in the env")
+	}
+
 	conn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Error connection to database")
 	}
 
 	apiCfg := apiConfig{
-		DB:       database.New(conn),
-		ModelURL: modelURL,
+		DB:        database.New(conn),
+		ModelURL:  modelURL,
+		AIVersion: aiVersion,
+		ODUVerion: oduVersion,
 	} //this is used for hooking up links
 
 	router := chi.NewRouter()
