@@ -1,8 +1,13 @@
 -- name: GetModelPredictions :many
 SELECT glucose_predicted, time_predicted FROM predictions
-WHERE model_id=$1
-AND patient_id=$2 
-AND time_predicted>$3
+WHERE model_id=(
+    SELECT id
+    FROM models
+    WHERE name=$1
+)
+AND version=$2
+AND patient_id=$3 
+AND time_predicted>$4
 ORDER BY time_predicted ASC;
 
 

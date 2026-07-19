@@ -44,13 +44,10 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 
 	now := time.Now()
 
-	// AIModel :=
-	// oduModel :=
-
 	aiPredictions, err := apiCfg.DB.GetModelPredictions(
 		r.Context(),
 		database.GetModelPredictionsParams{
-			// ModelID: AIModel,
+			Name:          "ai_model",
 			PatientID:     patientID,
 			TimePredicted: now,
 		},
@@ -63,7 +60,7 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 	oduPredictions, err := apiCfg.DB.GetModelPredictions(
 		r.Context(),
 		database.GetModelPredictionsParams{
-			// ModelID: oduModel,
+			Name:          "odu_model",
 			PatientID:     patientID,
 			TimePredicted: now,
 		},

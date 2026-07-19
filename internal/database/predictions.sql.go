@@ -57,14 +57,20 @@ func (q *Queries) AddPrediction(ctx context.Context, arg AddPredictionParams) (P
 
 const getModelPredictions = `-- name: GetModelPredictions :many
 SELECT glucose_predicted, time_predicted FROM predictions
-WHERE model_id=$1
-AND patient_id=$2 
-AND time_predicted>$3
+WHERE model_id=(
+    SELECT id
+    FROM models
+    WHERE name=$1
+)
+AND version=$2
+AND patient_id=$3 
+AND time_predicted>$4
 ORDER BY time_predicted ASC
 `
 
 type GetModelPredictionsParams struct {
-	ModelID       uuid.UUID
+	Name          string
+	Version       string
 	PatientID     int32
 	TimePredicted time.Time
 }
@@ -75,7 +81,12 @@ type GetModelPredictionsRow struct {
 }
 
 func (q *Queries) GetModelPredictions(ctx context.Context, arg GetModelPredictionsParams) ([]GetModelPredictionsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getModelPredictions, arg.ModelID, arg.PatientID, arg.TimePredicted)
+	rows, err := q.db.QueryContext(ctx, getModelPredictions,
+		arg.Name,
+		arg.Version,
+		arg.PatientID,
+		arg.TimePredicted,
+	)
 	if err != nil {
 		return nil, err
 	}

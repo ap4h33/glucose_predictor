@@ -65,9 +65,11 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 
 	now := time.Now()
 
-	modelPredictions, err := apiCfg.DB.GetModelPredictions(
+	aiPredictions, err := apiCfg.DB.GetModelPredictions(
 		r.Context(),
 		database.GetModelPredictionsParams{
+			Name:          "ai_model",
+			Version:       "1.0.0",
 			PatientID:     int32(patientID),
 			TimePredicted: now,
 		},
@@ -80,6 +82,8 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 	oduPredictions, err := apiCfg.DB.GetModelPredictions(
 		r.Context(),
 		database.GetModelPredictionsParams{
+			Name:          "odu_model",
+			Version:       "1.0.0",
 			PatientID:     int32(patientID),
 			TimePredicted: now,
 		},
@@ -91,7 +95,7 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 
 	respondWithJSON(w, 200, response{
 		Readings:         readings,
-		ModelPredictions: modelPredictions,
+		ModelPredictions: aiPredictions,
 		OduPredictions:   oduPredictions,
 	})
 }
