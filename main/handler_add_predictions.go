@@ -47,5 +47,10 @@ func (apiCfg *apiConfig) handlerAddPredictions(w http.ResponseWriter, r *http.Re
 		predictions = append(predictions, prediction)
 	}
 
-	respondWithJSON(w, http.StatusOK, predictions)
+	err = apiCfg.handlerSendInforForRecommendations(w, r, params[0].PatientID)
+	if err != nil {
+		return
+	}
+
+	respondWithJSON(w, 200, predictions)
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/ap4h33/glucose_predictor/internal/database"
 	"github.com/go-chi/chi/v5"
@@ -14,10 +15,12 @@ import (
 )
 
 type apiConfig struct {
-	DB        *database.Queries // the db package will be created by sqlc automatically
-	ModelURL  string            // connection with the model
-	AIVersion string
-	ODUVerion string
+	DB         *database.Queries // the db package will be created by sqlc automatically
+	HTTPClient *http.Client
+	ModelURL   string // connection with the model
+	AIVersion  string
+	ODUVersion string
+	RecURL     string
 }
 
 func main() {
@@ -49,16 +52,23 @@ func main() {
 		log.Fatal("ODU_MODEL_VERSION not found in the env")
 	}
 
+	recURL := os.Getenv("REC_URL")
+	if recURL == "" {
+		log.Fatal("REC_URL not found in the env")
+	}
+
 	conn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Error connection to database")
 	}
 
 	apiCfg := apiConfig{
-		DB:        database.New(conn),
-		ModelURL:  modelURL,
-		AIVersion: aiVersion,
-		ODUVerion: oduVersion,
+		DB:         database.New(conn),
+		HTTPClient: &http.Client{Timeout: 10 * time.Second},
+		ModelURL:   modelURL,
+		AIVersion:  aiVersion,
+		ODUVersion: oduVersion,
+		RecURL:     recURL,
 	} //this is used for hooking up links
 
 	router := chi.NewRouter()

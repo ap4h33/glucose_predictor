@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -30,45 +33,48 @@ func (apiCfg apiConfig) handlerGetRecommendations(w http.ResponseWriter, r *http
 	respondWithJSON(w, 200, recommendation)
 }
 
-func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter, r *http.Request, patientID int32) {
+type ReadingsResponse struct {
+	Glucose           string `json:"glucose"`
+	BasalRate         string `json:"basal_rate"`
+	Bolus             string `json:"bolus"`
+	Carbs             string `json:"carbs"`
+	ExerciseDuration  int32  `json:"exercise_duration"`
+	ExerciseIntensity int32  `json:"exercise_intensity"`
+}
+
+type PredictionsResponse struct {
+	ModelPrediction database.GetModelPredictionsRow
+	ModelName       string `json:"model_name"`
+}
+
+type RecommendationsRequest struct {
+	Readings    []ReadingsResponse    `json:"readings"`
+	Predictions []PredictionsResponse `json:"predictions"`
+}
+
+func (apiCfg apiConfig) buildRecommendationsPayload(ctx context.Context, patientID int32) (RecommendationsRequest, time.Time, error) {
 	// Time is used to get predictions > now, and readings from 1h ago till now.
 	now := time.Now()
 	duration, err := time.ParseDuration("1h")
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Could not parse time: %s", err))
+		return RecommendationsRequest{}, time.Time{}, fmt.Errorf("could not parse time: %w", err)
 	}
 	readingsTime := now.Add(-duration)
 
-	// Readings
-	type ReadingsResponse struct {
-		Glucose           string `json:"glucose"`
-		BasalRate         string `json:"basal_rate"`
-		Bolus             string `json:"bolus"`
-		Carbs             string `json:"carbs"`
-		ExerciseDuration  int32  `json:"exercise_duration"`
-		ExerciseIntensity int32  `json:"exercise_intensity"`
-	}
-
 	readings, err := apiCfg.DB.GetReadings(
-		r.Context(),
+		ctx,
 		database.GetReadingsParams{
 			PatientID:     patientID,
 			TimeOfReading: readingsTime,
 		},
 	)
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Could not get readings: %s", err))
+		return RecommendationsRequest{}, time.Time{}, fmt.Errorf("could not get readings: %w", err)
 	}
 
+	var lastReadingTime time.Time
 	if len(readings) > 0 {
-		w.Header().Set(
-			"parient_id",
-			strconv.FormatInt(int64(patientID), 10),
-		)
-		w.Header().Set(
-			"last_reading_time",
-			readings[0].TimeOfReading.Format(time.RFC3339),
-		)
+		lastReadingTime = readings[0].TimeOfReading
 	}
 
 	for i, j := 0, len(readings)-1; i < j; i, j = i+1, j-1 {
@@ -87,14 +93,8 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 		})
 	}
 
-	// Predictions
-	type PredictionResponse struct {
-		ModelPrediction database.GetModelPredictionsRow
-		ModelName       string `json:"model_name"`
-	}
-
 	aiPredictions, err := apiCfg.DB.GetModelPredictions(
-		r.Context(),
+		ctx,
 		database.GetModelPredictionsParams{
 			Name:          "ai_model",
 			Version:       apiCfg.AIVersion,
@@ -103,50 +103,85 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 		},
 	)
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Could not get model predictions: %s", err))
-		return
+		return RecommendationsRequest{}, time.Time{}, fmt.Errorf("could not get model predictions: %w", err)
 	}
 
 	oduPredictions, err := apiCfg.DB.GetModelPredictions(
-		r.Context(),
+		ctx,
 		database.GetModelPredictionsParams{
 			Name:          "odu_model",
-			Version:       apiCfg.ODUVerion,
-			PatientID:     int32(patientID),
+			Version:       apiCfg.ODUVersion,
+			PatientID:     patientID,
 			TimePredicted: now,
 		},
 	)
 	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Could not get model predictions: %s", err))
-		return
+		return RecommendationsRequest{}, time.Time{}, fmt.Errorf("could not get model predictions: %w", err)
 	}
 
-	var predictionsResponse []PredictionResponse
-	// This creates an array of all of the predictions, and labals them with according names.
+	var predictionsResponse []PredictionsResponse
 	for _, p := range aiPredictions {
-		predictionsResponse = append(predictionsResponse, PredictionResponse{
+		predictionsResponse = append(predictionsResponse, PredictionsResponse{
 			ModelPrediction: p,
 			ModelName:       "AI",
 		})
 	}
-
 	for _, p := range oduPredictions {
-		predictions = append(predictions, PredictionResponse{
+		predictionsResponse = append(predictionsResponse, PredictionsResponse{
 			ModelPrediction: p,
 			ModelName:       "ODU",
 		})
 	}
 
-	type response struct {
-		Readings    []ReadingsResponse   `json:"readings"`
-		Predictions []PredictionResponse `json:"predictions"`
-	}
-
-	respondWithJSON(w, 200, response{
+	return RecommendationsRequest{
 		Readings:    readingsResponse,
 		Predictions: predictionsResponse,
-	})
+	}, lastReadingTime, nil
+}
 
+func (apiCfg apiConfig) sendRecommendationsPayload(ctx context.Context, patientID int32, lastReadingTime time.Time, payload RecommendationsRequest) error {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("could not marshal recommendations payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", apiCfg.RecURL, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("could not build recommendations request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("patient_id", strconv.FormatInt(int64(patientID), 10))
+	if !lastReadingTime.IsZero() {
+		req.Header.Set("last_reading_time", lastReadingTime.Format(time.RFC3339))
+	}
+
+	resp, err := apiCfg.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("could not send info for recommendations: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("recommendations service returned status %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter, r *http.Request, patientID int32) error {
+	payload, lastReadingTime, err := apiCfg.buildRecommendationsPayload(r.Context(), patientID)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not build recommendations payload: %s", err))
+		return err
+	}
+
+	err = apiCfg.sendRecommendationsPayload(r.Context(), patientID, lastReadingTime, payload)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not send recommendations payload: %s", err))
+		return err
+	}
+
+	return nil
 }
 
 // func (apiCfg apiConfig) handlerCreateRecommendations(w http.ResponseWriter, r *http.Request) {

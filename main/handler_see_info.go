@@ -83,7 +83,7 @@ func (apiCfg *apiConfig) handlerSeeInfo(w http.ResponseWriter, r *http.Request) 
 		r.Context(),
 		database.GetModelPredictionsParams{
 			Name:          "odu_model",
-			Version:       apiCfg.ODUVerion,
+			Version:       apiCfg.ODUVersion,
 			PatientID:     int32(patientID),
 			TimePredicted: now,
 		},
