@@ -49,6 +49,15 @@ type Reading struct {
 	InTheModel        sql.NullBool
 }
 
+type Recommendation struct {
+	ID        uuid.UUID
+	PatientID int32
+	IsSafe    bool
+	Action    sql.NullString
+	Message   sql.NullString
+	CreatedAt sql.NullTime
+}
+
 type User struct {
 	ID         int32
 	HospitalID uuid.NullUUID

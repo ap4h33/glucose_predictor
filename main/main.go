@@ -78,6 +78,8 @@ func main() {
 	v1Router.Post("/predictions", apiCfg.handlerAddPredictions)
 	//GET latest predictions are in the glucose_levels, along with patient history
 
+	v1Router.Get("/recommendations/{patient_id}", apiCfg.handlerGetRecommendations)
+
 	v1Router.Post("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test works"))
 	})
