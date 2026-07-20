@@ -7,7 +7,46 @@ package database
 
 import (
 	"context"
+	"database/sql"
+
+	"github.com/google/uuid"
 )
+
+const addRecommendation = `-- name: AddRecommendation :one
+INSERT INTO recommendations(id, patient_id, is_safe, action, message, created_at)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, patient_id, is_safe, action, message, created_at
+`
+
+type AddRecommendationParams struct {
+	ID        uuid.UUID
+	PatientID int32
+	IsSafe    bool
+	Action    sql.NullString
+	Message   sql.NullString
+	CreatedAt sql.NullTime
+}
+
+func (q *Queries) AddRecommendation(ctx context.Context, arg AddRecommendationParams) (Recommendation, error) {
+	row := q.db.QueryRowContext(ctx, addRecommendation,
+		arg.ID,
+		arg.PatientID,
+		arg.IsSafe,
+		arg.Action,
+		arg.Message,
+		arg.CreatedAt,
+	)
+	var i Recommendation
+	err := row.Scan(
+		&i.ID,
+		&i.PatientID,
+		&i.IsSafe,
+		&i.Action,
+		&i.Message,
+		&i.CreatedAt,
+	)
+	return i, err
+}
 
 const getRecommendation = `-- name: GetRecommendation :one
 SELECT id, patient_id, is_safe, action, message, created_at 

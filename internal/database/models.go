@@ -27,6 +27,14 @@ type Model struct {
 	Version string
 }
 
+type ModelAccuracy struct {
+	ID            uuid.UUID
+	ModelID       uuid.UUID
+	Rmse          sql.NullString
+	Mae           sql.NullString
+	AssesmentDate time.Time
+}
+
 type Prediction struct {
 	ID               uuid.UUID
 	ModelID          uuid.UUID

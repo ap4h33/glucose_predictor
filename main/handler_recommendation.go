@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/ap4h33/glucose_predictor/internal/database"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 func (apiCfg apiConfig) handlerGetRecommendations(w http.ResponseWriter, r *http.Request) {
@@ -184,6 +186,51 @@ func (apiCfg apiConfig) handlerSendInforForRecommendations(w http.ResponseWriter
 	return nil
 }
 
-// func (apiCfg apiConfig) handlerCreateRecommendations(w http.ResponseWriter, r *http.Request) {
+func (apiCfg apiConfig) handlerAddRecommendations(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Patient   int32     `json:"patient_id"`
+		IsSafe    bool      `json:"is_safe"`
+		Action    string    `json:"action"`
+		Message   string    `json:"message"`
+		CreatedAt time.Time `json:"created_at"`
+	}
 
-// }
+	var params []parameters
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Error parsing JSON: %s", err))
+		return
+	}
+
+	recommendations := make([]database.Recommendation, 0, len(params))
+	//makes an empty slice, appends processed recommendation into said slice, then returns the whole thing once the loop is complete
+	for _, p := range params {
+		recommendation, err := apiCfg.DB.AddRecommendation(r.Context(), database.AddRecommendationParams{
+			ID:        uuid.New(),
+			PatientID: p.Patient,
+			IsSafe:    p.IsSafe,
+			Action: sql.NullString{
+				String: p.Action,
+				Valid:  p.Action != "",
+			},
+			Message: sql.NullString{
+				String: p.Message,
+				Valid:  p.Message != "",
+			},
+			CreatedAt: sql.NullTime{
+				Time:  p.CreatedAt,
+				Valid: !p.CreatedAt.IsZero(),
+			},
+		})
+		if err != nil {
+			respondWithError(w, 400, fmt.Sprintf("Could not create recommendation: %s", err))
+			return
+		}
+
+		recommendations = append(recommendations, recommendation)
+	}
+
+	respondWithJSON(w, 200, recommendations)
+}
