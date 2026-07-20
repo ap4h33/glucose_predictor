@@ -74,15 +74,15 @@ func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error
 	}
 
 	// Marks the readings that were sent
-	for _, reading := range readings {
-		err := apiCfg.DB.UpdateReadingModelStatus(
-			context.Background(),
-			reading.ID,
-		)
-		if err != nil {
-			return fmt.Errorf("could not update reading %s: %w", reading.ID, err)
-		}
-	}
+	// for _, reading := range readings {
+	// 	err := apiCfg.DB.UpdateReadingModelStatus(
+	// 		context.Background(),
+	// 		reading.ID,
+	// 	)
+	// 	if err != nil {
+	// 		return fmt.Errorf("could not update reading %s: %w", reading.ID, err)
+	// 	}
+	// }
 
 	return nil
 }
