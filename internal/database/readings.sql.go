@@ -102,7 +102,6 @@ func (q *Queries) GetAllReadings(ctx context.Context, patientID int32) ([]Readin
 const getLastReadings = `-- name: GetLastReadings :many
 SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM READINGS 
 WHERE patient_id=$1
-AND in_the_model=false
 ORDER BY time_of_reading DESC
 LIMIT 12
 `

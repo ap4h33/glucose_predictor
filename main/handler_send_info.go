@@ -19,11 +19,6 @@ func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error
 		return fmt.Errorf("could not get unseen readings: %w", err)
 	}
 
-	// Not enough data for the model
-	if len(readings) < readings_amount {
-		return nil
-	}
-
 	// Shape: (1, readings_amount, 6)
 	modelInput := make([][][]float32, 1)
 	modelInput[0] = make([][]float32, 0, len(readings))
