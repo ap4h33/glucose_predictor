@@ -100,21 +100,38 @@ func (q *Queries) GetAllReadings(ctx context.Context, patientID int32) ([]Readin
 }
 
 const getLastReadings = `-- name: GetLastReadings :many
-SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM READINGS 
-WHERE patient_id=$1
-ORDER BY time_of_reading DESC
-LIMIT 12
+WITH recent AS (
+    SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM readings
+    WHERE patient_id = $1
+    ORDER BY time_of_reading DESC
+    LIMIT 12
+)
+SELECT id, patient_id, time_of_reading, glucose, basal_rate, bolus, carbs, exercise_duration, exercise_intensity, in_the_model FROM recent
+ORDER BY time_of_reading ASC
 `
 
-func (q *Queries) GetLastReadings(ctx context.Context, patientID int32) ([]Reading, error) {
+type GetLastReadingsRow struct {
+	ID                uuid.UUID
+	PatientID         int32
+	TimeOfReading     time.Time
+	Glucose           string
+	BasalRate         string
+	Bolus             string
+	Carbs             string
+	ExerciseDuration  sql.NullInt32
+	ExerciseIntensity sql.NullInt32
+	InTheModel        sql.NullBool
+}
+
+func (q *Queries) GetLastReadings(ctx context.Context, patientID int32) ([]GetLastReadingsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getLastReadings, patientID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Reading
+	var items []GetLastReadingsRow
 	for rows.Next() {
-		var i Reading
+		var i GetLastReadingsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.PatientID,

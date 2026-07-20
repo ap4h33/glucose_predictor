@@ -19,11 +19,6 @@ func (apiCfg *apiConfig) handlerSendUnseenReadingsToModel(patientID int32) error
 		return fmt.Errorf("could not get unseen readings: %w", err)
 	}
 
-	// Reverse for the model: first oldest, last newest.
-	for i, j := 0, len(readings)-1; i < j; i, j = i+1, j-1 {
-		readings[i], readings[j] = readings[j], readings[i]
-	}
-
 	// Shape: (1, readings_amount, 6)
 	modelInput := make([][][]float32, 1)
 	modelInput[0] = make([][]float32, 0, len(readings))

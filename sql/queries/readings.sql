@@ -26,7 +26,11 @@ AND in_the_model=false
 ORDER BY time_of_reading DESC;
 
 -- name: GetLastReadings :many
-SELECT * FROM READINGS 
-WHERE patient_id=$1
-ORDER BY time_of_reading DESC
-LIMIT 12;
+WITH recent AS (
+    SELECT * FROM readings
+    WHERE patient_id = $1
+    ORDER BY time_of_reading DESC
+    LIMIT 12
+)
+SELECT * FROM recent
+ORDER BY time_of_reading ASC;
