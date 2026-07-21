@@ -54,48 +54,31 @@ func (apiCfg *apiConfig) handlerAddPredictions(w http.ResponseWriter, r *http.Re
 	predictions := make([]database.Prediction, 0, len(params)*3)
 
 	for _, p := range params {
-		prediction30, err := apiCfg.DB.AddPrediction(r.Context(), database.AddPredictionParams{
-			ID:               uuid.New(),
-			ModelID:          modelID,
-			PatientID:        patientID,
-			GlucosePredicted: p.GlucoseIn30.String(),
-			TimePredicted:    lastReadingTime.Add(30 * time.Minute),
-			GeneratedAt:      createdAt,
-		})
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Could not create prediction: %s", err))
-			return
+		predictionData := []struct {
+			glucose json.Number
+			minutes time.Duration
+		}{
+			{p.GlucoseIn30, 30 * time.Minute},
+			{p.GlucoseIn60, 60 * time.Minute},
+			{p.GlucoseIn90, 90 * time.Minute},
 		}
 
-		prediction60, err := apiCfg.DB.AddPrediction(r.Context(), database.AddPredictionParams{
-			ID:               uuid.New(),
-			ModelID:          modelID,
-			PatientID:        patientID,
-			GlucosePredicted: p.GlucoseIn60.String(),
-			TimePredicted:    lastReadingTime.Add(60 * time.Minute),
-			GeneratedAt:      createdAt,
-		})
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Could not create prediction: %s", err))
-			return
-		}
+		for _, pred := range predictionData {
+			prediction, err := apiCfg.DB.AddPrediction(r.Context(), database.AddPredictionParams{
+				ID:               uuid.New(),
+				ModelID:          modelID,
+				PatientID:        patientID,
+				GlucosePredicted: pred.glucose.String(),
+				TimePredicted:    lastReadingTime.Add(pred.minutes),
+				GeneratedAt:      createdAt,
+			})
+			if err != nil {
+				respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Could not create prediction: %s", err))
+				return
+			}
 
-		prediction90, err := apiCfg.DB.AddPrediction(r.Context(), database.AddPredictionParams{
-			ID:               uuid.New(),
-			ModelID:          modelID,
-			PatientID:        patientID,
-			GlucosePredicted: p.GlucoseIn90.String(),
-			TimePredicted:    lastReadingTime.Add(90 * time.Minute),
-			GeneratedAt:      createdAt,
-		})
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Could not create prediction: %s", err))
-			return
+			predictions = append(predictions, prediction)
 		}
-
-		predictions = append(predictions, prediction30)
-		predictions = append(predictions, prediction60)
-		predictions = append(predictions, prediction90)
 	}
 
 	err = apiCfg.handlerSendInforForRecommendations(w, r, patientID)
