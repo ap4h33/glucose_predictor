@@ -65,7 +65,7 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 
 	for patientID := range patients {
 		go func(id int32) {
-			if err := apiCfg.handlerSendUnseenReadingsToModel(id); err != nil {
+			if err := apiCfg.handlerSendReadingsToModel(id); err != nil {
 				log.Printf("error sending readings for patient %d: %v", id, err)
 			}
 		}(patientID)
