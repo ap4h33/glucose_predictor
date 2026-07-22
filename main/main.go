@@ -10,6 +10,7 @@ import (
 	"github.com/ap4h33/glucose_predictor/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq" //for sql
 )
@@ -19,7 +20,9 @@ type apiConfig struct {
 	HTTPClient *http.Client
 	ModelURL   string // connection with the model
 	AIVersion  string
+	AImodelID  uuid.UUID
 	ODUVersion string
+	ODUmodelID uuid.UUID
 	RecURL     string
 }
 
@@ -47,9 +50,27 @@ func main() {
 		log.Fatal("AI_MODEL_VERSION not found in the env")
 	}
 
+	aiModelIDStr := os.Getenv("AI_MODEL_ID")
+	if aiModelIDStr == "" {
+		log.Fatal("AI_MODEL_ID not found in the env")
+	}
+	aiModelID, err := uuid.Parse(aiModelIDStr)
+	if err != nil {
+		log.Fatalf("invalid AI_MODEL_ID: %v", err)
+	}
+
 	oduVersion := os.Getenv("ODU_MODEL_VERSION")
 	if oduVersion == "" {
 		log.Fatal("ODU_MODEL_VERSION not found in the env")
+	}
+
+	oduModelIDStr := os.Getenv("ODU_MODEL_ID")
+	if oduModelIDStr == "" {
+		log.Fatal("ODU_MODEL_ID not found in the env")
+	}
+	oduModelID, err := uuid.Parse(oduModelIDStr)
+	if err != nil {
+		log.Fatalf("invalid ODU_MODEL_ID: %v", err)
 	}
 
 	recURL := os.Getenv("REC_URL")
@@ -67,7 +88,9 @@ func main() {
 		HTTPClient: &http.Client{Timeout: 10 * time.Second},
 		ModelURL:   modelURL,
 		AIVersion:  aiVersion,
+		AImodelID:  aiModelID,
 		ODUVersion: oduVersion,
+		ODUmodelID: oduModelID,
 		RecURL:     recURL,
 	} //this is used for hooking up links
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -67,6 +68,18 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 		go func(id int32) {
 			if err := apiCfg.handlerSendReadingsToModel(id); err != nil {
 				log.Printf("error sending readings for patient %d: %v", id, err)
+			}
+		}(patientID)
+		go func(id int32) {
+			unseenReadings, err := apiCfg.DB.GetUnseenReadings(context.Background(), id)
+			if err != nil {
+				log.Printf("error getting unseen readings for patient %d: %v", id, err)
+				return
+			}
+			if len(unseenReadings) >= 500 {
+				if err := apiCfg.handlerSendInforForRetraining(w, r, id); err != nil {
+					log.Printf("error sending readings for retraining %d: %v", id, err)
+				}
 			}
 		}(patientID)
 	}

@@ -107,19 +107,19 @@ func (apiCfg apiConfig) sendRetrainPayload(ctx context.Context, patientID int32,
 	return nil
 }
 
-func (apiCfg apiConfig) handlerSendInforForRetraining(w http.ResponseWriter, r *http.Request, patientID int32, modelID uuid.UUID) error {
+func (apiCfg apiConfig) handlerSendInforForRetraining(w http.ResponseWriter, r *http.Request, patientID int32) error {
 	payload, err := apiCfg.buildRetrainModelPayload(r.Context(), patientID)
 	if err != nil {
 		respondWithError(w, 400, fmt.Sprintf("Could not build retraining payload: %s", err))
 		return err
 	}
 
-	err = apiCfg.sendRetrainPayload(r.Context(), patientID, modelID, "retrain", payload)
+	err = apiCfg.sendRetrainPayload(r.Context(), patientID, apiCfg.AImodelID, "retrain", payload)
 	if err != nil {
 		respondWithError(w, 400, fmt.Sprintf("Could not send recommendations payload: %s", err))
 		return err
 	}
-	err = apiCfg.sendRetrainPayload(r.Context(), patientID, modelID, "recalibrate", payload)
+	err = apiCfg.sendRetrainPayload(r.Context(), patientID, apiCfg.ODUmodelID, "recalibrate", payload)
 	if err != nil {
 		respondWithError(w, 400, fmt.Sprintf("Could not send recommendations payload: %s", err))
 		return err
