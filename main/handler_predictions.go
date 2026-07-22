@@ -88,3 +88,34 @@ func (apiCfg *apiConfig) handlerAddPredictions(w http.ResponseWriter, r *http.Re
 
 	respondWithJSON(w, 200, predictions)
 }
+
+func (apiCfg *apiConfig) handlerGetAllModelPredictions(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Name      string `json:"name"`
+		Version   string `json:"version"`
+		PatientID int32  `json:"patient_id"`
+	}
+
+	params := parameters{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Error parsing JSON: %s", err))
+		return
+	}
+
+	predictions, err := apiCfg.DB.GetAllModelPredictions(
+		r.Context(),
+		database.GetAllModelPredictionsParams{
+			Name:      params.Name,
+			Version:   params.Version,
+			PatientID: params.PatientID,
+		},
+	)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not get model predictions: %s", err))
+		return
+	}
+
+	respondWithJSON(w, 200, predictions)
+}

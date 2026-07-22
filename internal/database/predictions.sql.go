@@ -55,6 +55,54 @@ func (q *Queries) AddPrediction(ctx context.Context, arg AddPredictionParams) (P
 	return i, err
 }
 
+const getAllModelPredictions = `-- name: GetAllModelPredictions :many
+SELECT id, model_id, patient_id, glucose_predicted, time_predicted, generated_at FROM predictions
+WHERE model_id=(
+    SELECT id
+    FROM models
+    WHERE name=$1
+    AND version=$2
+)
+AND patient_id=$3
+ORDER BY time_predicted ASC
+`
+
+type GetAllModelPredictionsParams struct {
+	Name      string
+	Version   string
+	PatientID int32
+}
+
+func (q *Queries) GetAllModelPredictions(ctx context.Context, arg GetAllModelPredictionsParams) ([]Prediction, error) {
+	rows, err := q.db.QueryContext(ctx, getAllModelPredictions, arg.Name, arg.Version, arg.PatientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Prediction
+	for rows.Next() {
+		var i Prediction
+		if err := rows.Scan(
+			&i.ID,
+			&i.ModelID,
+			&i.PatientID,
+			&i.GlucosePredicted,
+			&i.TimePredicted,
+			&i.GeneratedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getModelPredictions = `-- name: GetModelPredictions :many
 SELECT glucose_predicted, time_predicted FROM predictions
 WHERE model_id=(

@@ -10,6 +10,17 @@ AND patient_id=$3
 AND time_predicted>$4
 ORDER BY time_predicted ASC;
 
+-- name: GetAllModelPredictions :many
+SELECT * FROM predictions
+WHERE model_id=(
+    SELECT id
+    FROM models
+    WHERE name=$1
+    AND version=$2
+)
+AND patient_id=$3
+ORDER BY time_predicted ASC;
+
 
 -- name: AddPrediction :one
 INSERT INTO predictions (

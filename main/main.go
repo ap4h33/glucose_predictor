@@ -123,7 +123,7 @@ func main() {
 	v1Router.Get("/glucose_levels/{patient_id}", apiCfg.handlerSeeInfo) // Full patient history
 	v1Router.Get("/glucose_levels/{patient_id}/{time_period}", apiCfg.handlerSeeInfo)
 	v1Router.Post("/predictions", apiCfg.handlerAddPredictions)
-	// TO DO: handler get all predictions
+	v1Router.Get("/predictions", apiCfg.handlerGetAllModelPredictions)
 	//GET latest predictions are in the glucose_levels, along with patient history
 
 	v1Router.Get("/recommendations/{patient_id}", apiCfg.handlerGetRecommendations)
