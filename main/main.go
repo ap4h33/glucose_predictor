@@ -130,7 +130,7 @@ func main() {
 	v1Router.Post("/recommendations", apiCfg.handlerAddRecommendations)
 
 	v1Router.Post("/models", apiCfg.handlerAddModel)
-	// TO DO: handler get all models
+	v1Router.Get("/models", apiCfg.handlerGetAllModels)
 
 	v1Router.Post("/test", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("test works"))

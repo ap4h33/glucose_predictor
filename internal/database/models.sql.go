@@ -29,3 +29,30 @@ func (q *Queries) AddModel(ctx context.Context, arg AddModelParams) (Model, erro
 	err := row.Scan(&i.ID, &i.Name, &i.Version)
 	return i, err
 }
+
+const getAllModels = `-- name: GetAllModels :many
+SELECT id, name, version FROM models
+`
+
+func (q *Queries) GetAllModels(ctx context.Context) ([]Model, error) {
+	rows, err := q.db.QueryContext(ctx, getAllModels)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Model
+	for rows.Next() {
+		var i Model
+		if err := rows.Scan(&i.ID, &i.Name, &i.Version); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

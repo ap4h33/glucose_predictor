@@ -35,3 +35,15 @@ func (apiCfg *apiConfig) handlerAddModel(w http.ResponseWriter, r *http.Request)
 
 	respondWithJSON(w, 200, model)
 }
+
+func (apiCfg *apiConfig) handlerGetAllModels(w http.ResponseWriter, r *http.Request) {
+	models, err := apiCfg.DB.GetAllModels(
+		r.Context(),
+	)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not get models: %s", err))
+		return
+	}
+
+	respondWithJSON(w, 200, models)
+}
