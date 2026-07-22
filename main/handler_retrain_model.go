@@ -17,7 +17,7 @@ type RetrainRequest struct {
 	Readings [][]float32 `json:"readings"`
 }
 
-func (apiCfg apiConfig) buildRetrainModelPayload(patientId int32) (*RetrainRequest, error) {
+func (apiCfg apiConfig) buildRetrainModelPayload(ctx context.Context, patientId int32) (*RetrainRequest, error) {
 	duration, err := time.ParseDuration("24h")
 	if err != nil {
 		return nil, fmt.Errorf("Could not parse duration: %w", err)
@@ -25,7 +25,7 @@ func (apiCfg apiConfig) buildRetrainModelPayload(patientId int32) (*RetrainReque
 	startTime := time.Now().Add(-duration)
 
 	readings, err := apiCfg.DB.GetReadings(
-		r.Context(),
+		ctx,
 		database.GetReadingsParams{
 			PatientID:     patientId,
 			TimeOfReading: startTime,
@@ -73,7 +73,7 @@ func (apiCfg apiConfig) buildRetrainModelPayload(patientId int32) (*RetrainReque
 	}, nil
 }
 
-func (apiCfg apiConfig) sendRetrainPayload(ctx context.Context, patientID int32, modelID uuid.UUID, signal string, payload RetrainRequest) error {
+func (apiCfg apiConfig) sendRetrainPayload(ctx context.Context, patientID int32, modelID uuid.UUID, signal string, payload *RetrainRequest) error {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("Could not marshal retrain payload: %w", err)
@@ -102,6 +102,27 @@ func (apiCfg apiConfig) sendRetrainPayload(ctx context.Context, patientID int32,
 
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("Retrain service returned status %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (apiCfg apiConfig) handlerSendInforForRetraining(w http.ResponseWriter, r *http.Request, patientID int32, modelID uuid.UUID) error {
+	payload, err := apiCfg.buildRetrainModelPayload(r.Context(), patientID)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not build retraining payload: %s", err))
+		return err
+	}
+
+	err = apiCfg.sendRetrainPayload(r.Context(), patientID, modelID, "retrain", payload)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not send recommendations payload: %s", err))
+		return err
+	}
+	err = apiCfg.sendRetrainPayload(r.Context(), patientID, modelID, "recalibrate", payload)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Could not send recommendations payload: %s", err))
+		return err
 	}
 
 	return nil
