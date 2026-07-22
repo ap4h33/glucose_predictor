@@ -19,6 +19,7 @@ func (apiCfg *apiConfig) handlerSendReadingsToModel(patientID int32) error {
 		ExerciseDuration  float32 `json:"exercise_duration"`
 		ExerciseIntensity float32 `json:"exercise_intensity"`
 	}
+	// TO DO: ADD PATIENT ID AND MODEL ID IN HEADER
 
 	type ModelRequest struct {
 		Readings []ModelReading `json:"readings"`
