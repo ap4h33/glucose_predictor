@@ -13,9 +13,9 @@ import (
 
 func (apiCfg *apiConfig) handlerAddPredictions(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		GlucoseIn30 json.Number `json:"glucose30"`
-		GlucoseIn60 json.Number `json:"glucose60"`
-		GlucoseIn90 json.Number `json:"glucose90"`
+		GlucoseIn30  json.Number `json:"glucose30"`
+		GlucoseIn60  json.Number `json:"glucose60"`
+		GlucoseIn120 json.Number `json:"glucose90"`
 	}
 
 	var params []parameters
@@ -26,28 +26,28 @@ func (apiCfg *apiConfig) handlerAddPredictions(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	modelID, err := uuid.Parse(r.Header.Get("Model-ID"))
+	modelID, err := uuid.Parse(r.Header.Get("model_id"))
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid Model-ID header")
+		respondWithError(w, http.StatusBadRequest, "Invalid model_id header")
 		return
 	}
 
-	patientID64, err := strconv.ParseInt(r.Header.Get("Patient-ID"), 10, 32)
+	patientID64, err := strconv.ParseInt(r.Header.Get("patient_id"), 10, 32)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid Patient-ID header")
+		respondWithError(w, http.StatusBadRequest, "Invalid patient_id header")
 		return
 	}
 	patientID := int32(patientID64)
 
-	lastReadingTime, err := time.Parse(time.RFC3339, r.Header.Get("Last-Reading-Time"))
+	lastReadingTime, err := time.Parse(time.RFC3339, r.Header.Get("last_reading_time"))
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid Last-Reading-Time header")
+		respondWithError(w, http.StatusBadRequest, "Invalid last_reading_time header")
 		return
 	}
 
-	createdAt, err := time.Parse(time.RFC3339, r.Header.Get("Created-At"))
+	createdAt, err := time.Parse(time.RFC3339, r.Header.Get("created_at"))
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid Created-At header")
+		respondWithError(w, http.StatusBadRequest, "Invalid created_at header")
 		return
 	}
 
@@ -60,7 +60,7 @@ func (apiCfg *apiConfig) handlerAddPredictions(w http.ResponseWriter, r *http.Re
 		}{
 			{p.GlucoseIn30, 30 * time.Minute},
 			{p.GlucoseIn60, 60 * time.Minute},
-			{p.GlucoseIn90, 90 * time.Minute},
+			{p.GlucoseIn120, 120 * time.Minute},
 		}
 
 		for _, pred := range predictionData {

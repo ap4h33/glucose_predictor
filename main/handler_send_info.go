@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
 func (apiCfg *apiConfig) handlerSendReadingsToModel(patientID int32) error {
@@ -19,7 +21,6 @@ func (apiCfg *apiConfig) handlerSendReadingsToModel(patientID int32) error {
 		ExerciseDuration  float32 `json:"exercise_duration"`
 		ExerciseIntensity float32 `json:"exercise_intensity"`
 	}
-	// TO DO: ADD PATIENT ID AND MODEL ID IN HEADER
 
 	type ModelRequest struct {
 		Readings []ModelReading `json:"readings"`
@@ -77,19 +78,43 @@ func (apiCfg *apiConfig) handlerSendReadingsToModel(patientID int32) error {
 		return fmt.Errorf("could not encode readings: %w", err)
 	}
 
-	response, err := http.Post(
-		// TO DO: differenciaet models
-		apiCfg.ModelURL,
-		"application/json",
-		bytes.NewBuffer(body),
-	)
-	if err != nil {
-		return fmt.Errorf("could not send readings to model: %w", err)
-	}
-	defer response.Body.Close()
+	client := &http.Client{}
 
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return fmt.Errorf("model returned status code: %d", response.StatusCode)
+	modelIDs := []uuid.UUID{
+		apiCfg.AImodelID,
+		apiCfg.ODUmodelID,
+	}
+
+	for _, modelID := range modelIDs {
+		req, err := http.NewRequest(
+			http.MethodPost,
+			apiCfg.ModelURL,
+			bytes.NewReader(body),
+		)
+		if err != nil {
+			return fmt.Errorf("could not create request: %w", err)
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Patient-ID", strconv.Itoa(int(patientID)))
+		req.Header.Set("Model-ID", modelID.String())
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("could not send readings to model %s: %w", modelID, err)
+		}
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			resp.Body.Close()
+			return fmt.Errorf("model %s returned status code: %d", modelID, resp.StatusCode)
+		}
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			resp.Body.Close()
+			return fmt.Errorf("model %s returned status code: %d", modelID, resp.StatusCode)
+		}
+
+		resp.Body.Close()
 	}
 
 	return nil
