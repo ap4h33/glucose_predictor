@@ -80,6 +80,17 @@ func (apiCfg *apiConfig) handlerAddReadings(w http.ResponseWriter, r *http.Reque
 				if err := apiCfg.handlerSendInforForRetraining(w, r, id); err != nil {
 					log.Printf("error sending readings for retraining %d: %v", id, err)
 				}
+				// Marks the readings that were sent
+				for _, reading := range readings {
+					err := apiCfg.DB.UpdateReadingModelStatus(
+						context.Background(),
+						reading.ID,
+					)
+					if err != nil {
+						log.Printf("Error changing readings status %d: %v", id, err)
+
+					}
+				}
 			}
 		}(patientID)
 	}
