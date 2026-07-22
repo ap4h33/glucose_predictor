@@ -19,12 +19,6 @@ SELECT * FROM readings
 WHERE patient_id=$1
 ORDER BY time_of_reading DESC;
 
--- name: GetUnseenReadings :many
-SELECT * FROM readings
-WHERE patient_id=$1
-AND in_the_model=false
-ORDER BY time_of_reading DESC;
-
 -- name: GetLastReadings :many
 WITH recent AS (
     SELECT * FROM readings

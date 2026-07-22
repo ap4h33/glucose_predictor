@@ -26,26 +26,26 @@ func (apiCfg *apiConfig) handlerAddPredictions(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	modelID, err := uuid.Parse(r.Header.Get("model_id"))
+	modelID, err := uuid.Parse(r.Header.Get("Model-ID"))
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid model_id header")
 		return
 	}
 
-	patientID64, err := strconv.ParseInt(r.Header.Get("patient_id"), 10, 32)
+	patientID64, err := strconv.ParseInt(r.Header.Get("Patient-ID"), 10, 32)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid patient_id header")
 		return
 	}
 	patientID := int32(patientID64)
 
-	lastReadingTime, err := time.Parse(time.RFC3339, r.Header.Get("last_reading_time"))
+	lastReadingTime, err := time.Parse(time.RFC3339, r.Header.Get("Last-Reading-Time"))
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid last_reading_time header")
 		return
 	}
 
-	createdAt, err := time.Parse(time.RFC3339, r.Header.Get("created_at"))
+	createdAt, err := time.Parse(time.RFC3339, r.Header.Get("Created-At"))
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid created_at header")
 		return
