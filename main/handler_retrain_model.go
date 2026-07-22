@@ -18,11 +18,7 @@ type RetrainRequest struct {
 }
 
 func (apiCfg apiConfig) buildRetrainModelPayload(ctx context.Context, patientId int32) (*RetrainRequest, error) {
-	duration, err := time.ParseDuration("24h")
-	if err != nil {
-		return nil, fmt.Errorf("Could not parse duration: %w", err)
-	}
-	startTime := time.Now().Add(-duration)
+	startTime := time.Now().AddDate(0, 0, -7)
 
 	readings, err := apiCfg.DB.GetReadings(
 		ctx,
